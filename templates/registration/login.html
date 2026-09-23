@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}
+<h1>Time, in the right place.</h1><p>Sign in to explore timezone preferences and local calendar weeks.</p>
+<section><form method="post">{% csrf_token %}{{ form.as_p }}<input type="hidden" name="next" value="{{ next }}"><button>Sign in</button></form>
+<p>Create a local user with <code>uv run python manage.py createsuperuser</code>.</p></section>
+{% endblock %}

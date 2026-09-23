@@ -1,0 +1,42 @@
+{% extends "base.html" %}{% load static tz %}
+{% block body_class %}inspector-page{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'vendor/tom-select-2.6.2/tom-select.default.css' %}"><link rel="stylesheet" href="{% static 'inspector.css' %}">{% endblock %}
+{% block content %}
+<div class="inspector" id="timezone-app" data-zone="{{ request.display_timezone }}" data-user="{{ request.user.pk }}" data-detect-url="{% url 'device_timezone' %}" data-suggestion-url="{% url 'timezone_suggestion' %}">
+<div class="page-title"><h1>{{ request.user.username }} · profile</h1><a href="/">Walkthrough &amp; inspector</a></div>
+<p class="zone">Event display: <strong>{{ request.display_timezone }}</strong></p>
+{% if request.user.username == 'demouser' %}<p class="note">Shared demo account. Other visitors can change its saved timezone. Use the same examples to compare dates and DST offsets.</p>{% endif %}
+<div class="reference-grid">
+<section><h2>1. Save an account timezone</h2>
+<form method="post" action="{% url 'preferences' %}" id="preferences-form" class="compact-form">{% csrf_token %}{{ preference_form.as_p }}<button>Save timezone</button></form>
+<p class="note">Open for U.S. choices first, or type a city, country, region, or IANA identifier to search worldwide. Browser detection never silently overwrites your selection.</p>
+</section>
+<section><h2>2. Simulate a browser timezone change</h2>
+<div class="compact-form"><label for="simulated-timezone">Simulated browser timezone</label>
+<select id="simulated-timezone"><option value="">Use actual browser timezone</option>{% for group, choices in timezone_groups %}<optgroup label="{{ group }}">{% for zone, label in choices %}<option value="{{ zone }}">{{ label }}</option>{% endfor %}</optgroup>{% endfor %}</select>
+<p>Actual browser: <code id="actual-browser-zone">Detecting…</code><br>Detection input: <code id="detected-zone">Detecting…</code></p>
+<p id="detection-status" role="status">The first reading establishes a baseline. Later changes can suggest an account update.</p>
+<button type="button" id="retry-detection" hidden>Retry detection</button>
+</div><p class="note">Simulation applies only to this tab’s demo. It does not change <code>Intl</code> or your device. Real and simulated readings have separate baselines. Prompts are offered once per directed pair (A → B) per login session in this browser, even after dismissal or reload; B → A is a different pair.</p>
+</section>
+</div>
+<section><h2>3. Compare event times <span>latest 50, across all dates</span></h2>
+<div class="table-scroll"><table><thead><tr><th scope="col">Event</th><th scope="col">Account time · {{ request.display_timezone }}</th><th scope="col">Stored UTC instant</th><th scope="col">Original timezone</th></tr></thead><tbody>
+{% for event in events %}<tr><td>{{ event.title }}</td><td class="event-local"><time datetime="{{ event.occurred_at|utc|date:'c' }}">{{ event.occurred_at|date:"Y-m-d H:i:s O" }}</time></td><td class="event-utc"><code>{{ event.occurred_at|utc|date:"c" }}</code></td><td><code>{{ event.original_timezone }}</code></td></tr>
+{% empty %}<tr><td colspan="4">No events yet. Add a moment below, or sign in as demouser for seeded examples.</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="note">Save another timezone to re-render these same timestamps. Accepting a suggestion does the same thing. Dismissing it leaves your saved timezone unchanged.</p>
+</section>
+<section><h2>Optional: enter a local time</h2><details {% if event_form.errors %}open{% endif %}><summary>Record a moment</summary>
+<p>Form timezone: <strong>{{ entry_zone }}</strong>. A signed context preserves this zone even if another tab changes the account setting.</p>
+<form method="post" action="{% url 'create_event' %}" id="event-form" class="compact-form">{% csrf_token %}{{ event_form.as_p }}<button>Save moment</button></form></details>
+<p class="note"><a href="{% url 'events_api' %}">Inspect this week’s UTC JSON response</a> · Report timezone: <code>{{ request.timezone_preference.reporting_timezone }}</code> (independent of display).</p></section>
+<footer><span>Detection → suggestion → explicit save → localized display</span><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="secondary">Sign out</button></form></footer>
+<dialog id="timezone-dialog" aria-labelledby="suggestion-heading" aria-describedby="suggestion-text">
+<h2 id="suggestion-heading">Timezone change detected</h2><p id="suggestion-text"></p><p class="note" id="suggestion-transition"></p>
+<p id="unsaved-warning" hidden>Applying this change reloads the page and discards unsaved edits. Choose “Keep my timezone” to finish editing first.</p>
+<p id="suggestion-error" role="status"></p><div class="dialog-actions"><button type="button" id="dismiss-timezone" class="secondary">Keep my timezone</button><button type="button" id="accept-timezone">Set timezone</button></div>
+</dialog>
+</div>{{ timezone_search_data|json_script:"timezone-search-data" }}
+<script type="module" src="{% static 'timezone.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,24 @@
+[project]
+name = "django-timezone-reference-implementation"
+version = "0.1.0"
+description = "Timezone preferences, UTC instants, local forms, and calendar boundaries in Django"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = ["django>=5.2,<5.3", "django-environ>=0.12,<1", "tzdata>=2025.2"]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "pytest-django>=4.11,<5", "ruff>=0.12,<1"]
+
+browser = ["playwright>=1.50,<2"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py"]
+filterwarnings = ["error:DateTimeField .* received a naive datetime:RuntimeWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

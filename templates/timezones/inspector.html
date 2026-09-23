@@ -1,0 +1,69 @@
+{% extends "base.html" %}{% load static %}
+{% block body_class %}inspector-page{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'inspector.css' %}">{% endblock %}
+{% block content %}
+<div class="inspector">
+<div class="page-title"><h1>Timezone inspector</h1><span>Read-only · no account or persistence</span></div>
+<section class="walkthrough" aria-labelledby="guide-heading">
+<h2 id="guide-heading">Try the account timezone flow</h2>
+<ol class="guide-steps">
+<li><strong>Sign in.</strong> Use <code>demouser</code> / <code>demopassword</code> on the <a href="{% url 'index' %}">demo profile</a>. This is a shared teaching account.</li>
+<li><strong>Save an account timezone.</strong> Select a zone on the profile. Event display follows that saved setting across visits; UTC timestamps stay unchanged.</li>
+<li><strong>Compare events.</strong> Try New York, Los Angeles, and Tokyo. The winter/summer examples show DST differences; the near-midnight event can change calendar date.</li>
+<li><strong>Simulate travel.</strong> Change the “Simulated browser timezone” dropdown. It exercises detection without changing your device settings.</li>
+<li><strong>Accept or dismiss.</strong> The popup suggests the new timezone. Only acceptance updates your account. Repeat the same from → to transition to see it suppressed in this browser session.</li>
+</ol>
+<p class="note">This demo uses saved account time + opt-in suggestions. “Follow device automatically” is a different valid product choice; <a href="https://support.google.com/calendar/answer/37064?co=GENIE.Platform%3DAndroid&amp;hl=en">Google Calendar offers that option</a>. The inspector below remains anonymous and read-only.</p>
+</section>
+<div class="clock-strip" aria-label="Live clocks">
+<div><span class="live-dot" aria-hidden="true"></span><span>Local</span> <time id="local-clock" aria-live="off">—</time></div>
+<div><span>UTC</span> <time id="utc-clock" aria-live="off">—</time></div>
+<span id="local-clock-details">Detecting browser timezone…</span>
+<span class="tick-note">Device clock · 1s refresh</span>
+</div>
+<div class="reference-grid">
+<section><h2>Runtime configuration</h2>
+<div class="table-scroll"><table><thead><tr><th scope="col">Source</th><th scope="col">Value</th></tr></thead><tbody>
+<tr><th scope="row"><code>settings.TIME_ZONE</code></th><td><code>{{ default_zone }}</code></td></tr>
+<tr><th scope="row"><code>settings.USE_TZ</code></th><td><code>{{ use_tz|yesno:"True,False" }}</code></td></tr>
+<tr><th scope="row"><code>connection.vendor</code></th><td><code>{{ database_vendor }}</code></td></tr>
+<tr><th scope="row"><code>connection.timezone_name</code></th><td><code>{{ database_zone }}</code></td></tr>
+<tr><th scope="row">Browser IANA zone</th><td><code id="browser-zone">Detecting…</code></td></tr>
+<tr><th scope="row">Browser offset at sample instant</th><td><code id="browser-offset">—</code></td></tr>
+</tbody></table></div>
+<p class="note">{% if database_vendor == "sqlite" %}SQLite has no native timezone setting. Django prepares UTC values for storage and returns aware datetimes with <code>USE_TZ=True</code>.{% else %}The connection timezone controls database conversion, separately from the display timezone.{% endif %}</p>
+<details><summary>Browser detection</summary><pre><code>Intl.DateTimeFormat().resolvedOptions().timeZone</code></pre><p class="note">Reads the browser’s setting; no GPS or IP lookup.</p></details>
+<p class="note" id="browser-status" role="status">Client-side inspection only. No requests, cookies, or storage writes from detection.</p>
+</section>
+<section><h2>U.S. regions &amp; territories <span>live</span></h2>
+<div class="table-scroll"><table class="timezone-table"><thead><tr><th scope="col">Region / IANA zone</th><th scope="col">Time · 24h</th><th scope="col">Date / offset</th></tr></thead><tbody>
+<tr class="world-clock" data-timezone="America/New_York"><td>Eastern<code class="zone-id">America/New_York</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="America/Chicago"><td>Central<code class="zone-id">America/Chicago</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="America/Denver"><td>Mountain<code class="zone-id">America/Denver</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="America/Los_Angeles"><td>Pacific<code class="zone-id">America/Los_Angeles</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="America/Anchorage"><td>Alaska<code class="zone-id">America/Anchorage</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="Pacific/Honolulu"><td>Hawaii<code class="zone-id">Pacific/Honolulu</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="America/Phoenix"><td>Arizona<code class="zone-id">America/Phoenix</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="America/Adak"><td>Aleutians (DST)<code class="zone-id">America/Adak</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="America/Puerto_Rico"><td>Atlantic · Puerto Rico / USVI<code class="zone-id">America/Puerto_Rico</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="Pacific/Pago_Pago"><td>Samoa · American Samoa<code class="zone-id">Pacific/Pago_Pago</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="Pacific/Guam"><td>Chamorro · Guam / N. Mariana Is.<code class="zone-id">Pacific/Guam</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+<tr class="world-clock" data-timezone="Pacific/Wake"><td>Wake Island<code class="zone-id">Pacific/Wake</code></td><td><time aria-live="off">—</time></td><td class="clock-details">—</td></tr>
+</tbody></table></div>
+<p class="note">Covers the nine U.S. standard zones, Arizona/Hawaii DST differences, and Wake Island. Offsets come from <code>Intl</code>. The profile dropdown also includes regional IANA histories such as Indiana, Kentucky, and Alaska localities.</p>
+</section>
+</div>
+<section><h2>Timestamp representations <span>fixed at page render</span></h2>
+<div class="table-scroll"><table class="snapshot-table"><thead><tr><th scope="col">Representation</th><th scope="col">Value</th><th scope="col">Conversion</th></tr></thead><tbody>
+<tr><th scope="row">UTC / ISO 8601</th><td><code id="utc-instant">{{ instant }}</code></td><td><code>timezone.now().isoformat()</code></td></tr>
+<tr><th scope="row">Prepared DB value · not saved</th><td><code>{{ database_value }}</code></td><td><code>connection.ops.adapt_datetimefield_value(dt)</code></td></tr>
+<tr><th scope="row">Browser-local display</th><td><code id="browser-time">Detecting…</code></td><td><code>Intl.DateTimeFormat().format(date)</code></td></tr>
+</tbody></table></div>
+<p class="note">All three rows represent one instant. The clocks above advance independently using the device clock; this server sample stays fixed. A zone name carries DST rules; a UTC offset alone does not.</p>
+</section>
+<noscript><p>JavaScript is disabled. Server values are available; browser detection and live clocks require JavaScript.</p></noscript>
+<footer><span>Django + ZoneInfo → UTC storage → local display</span><a href="{% url 'index' %}">Account-based examples →</a></footer>
+</div>
+{{ instant|json_script:"sample-instant" }}
+<script type="module" src="{% static 'inspector.js' %}"></script>
+{% endblock %}
