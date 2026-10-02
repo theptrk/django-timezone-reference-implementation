@@ -19,7 +19,8 @@ class Command(BaseCommand):
         user.is_active = True
         user.save()
         TimezonePreference.objects.get_or_create(
-            user=user, defaults={"display_timezone": "America/New_York"}
+            user=user,
+            defaults={"display_timezone": "America/New_York", "timezone_initialized": True},
         )
         for title, instant in [
             ("Winter standup", datetime(2026, 1, 15, 17, tzinfo=UTC)),

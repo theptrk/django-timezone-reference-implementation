@@ -7,6 +7,7 @@ from .zones import validate_zone
 class TimezonePreference(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     display_timezone = models.CharField(max_length=100, default="UTC", validators=[validate_zone])
+    timezone_initialized = models.BooleanField(default=False, editable=False)
     reporting_timezone = models.CharField(max_length=100, default="UTC", validators=[validate_zone])
 
 

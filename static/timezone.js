@@ -54,7 +54,10 @@ async function detect() {
     const result = await post(app.dataset.detectUrl, { timezone: zone, source });
     lastReading = reading;
     status.textContent = `Detected ${zone}. Saved account timezone: ${result.display_timezone}.`;
-    if (result.suggestion) {
+    if (result.initialized) {
+      if (!dirty) { location.reload(); return; }
+      status.textContent += " Account timezone initialized. Reload after saving your edits to update displayed times.";
+    } else if (result.suggestion) {
       suggestion = result.suggestion;
       document.querySelector("#suggestion-text").textContent =
         `We detected your timezone changed. Would you like to set it to ${suggestion.to}?`;
