@@ -11,6 +11,9 @@ Once initialized or manually selected, browser detection never overwrites the ac
 Built with Django 5.2, Python `zoneinfo`, SQLite, server-rendered templates, and plain JavaScript.
 No frontend build step is required.
 
+Live demo: https://timezone.delmarscience.com/
+Deployment details: [Dokku runbook](docs/dokku-deploy.md).
+
 ## Run the reference
 
 Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).

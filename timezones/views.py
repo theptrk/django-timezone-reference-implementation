@@ -23,6 +23,15 @@ from .zones import (
 
 
 @require_GET
+def health(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1")
+    response = JsonResponse({"status": "ok"})
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+@require_GET
 def inspector(request):
     instant = timezone.now()
     return render(

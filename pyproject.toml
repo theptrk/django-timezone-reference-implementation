@@ -5,7 +5,14 @@ description = "Timezone preferences, UTC instants, local forms, and calendar bou
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
-dependencies = ["django>=5.2,<5.3", "django-environ>=0.12,<1", "tzdata>=2025.2"]
+dependencies = [
+    "django>=5.2,<5.3",
+    "django-environ>=0.12,<1",
+    "gunicorn>=23,<24",
+    "psycopg[binary]>=3.2,<4",
+    "tzdata>=2025.2",
+    "whitenoise>=6,<7",
+]
 
 [dependency-groups]
 dev = ["pytest>=8,<10", "pytest-django>=4.11,<5", "ruff>=0.12,<1"]
