@@ -5,8 +5,8 @@ application. It covers UTC event storage, account timezone preferences, local da
 DST validation, calendar queries, and browser timezone change suggestions.
 
 The central policy: **store instants in UTC, display them in the user's saved IANA timezone,
-and ask before changing that preference when the browser timezone changes.** Browser detection
-is a suggestion, not permission to overwrite the account setting.
+initialize new accounts from the first valid browser timezone, and ask before later changes.**
+Once initialized or manually selected, browser detection never overwrites the account setting.
 
 Built with Django 5.2, Python `zoneinfo`, SQLite, server-rendered templates, and plain JavaScript.
 No frontend build step is required.
@@ -112,12 +112,15 @@ Intl.DateTimeFormat().resolvedOptions().timeZone
 ```
 
 Detection runs on page load, window focus, and return to a visible tab. The server validates the
-reported IANA name. A first reading establishes a baseline; an initial mismatch with the saved
+reported IANA name. For a new, uninitialized account, the first real browser reading saves the
+initial display timezone once. Simulation cannot initialize it. The response asks the UI to
+reload localized times, unless the user has unsaved edits. For an already initialized account,
+a first reading establishes a baseline; an initial mismatch with the saved
 account zone does **not** prompt. This implementation reacts to an observed change.
 
 | State | Scope | Updated by |
 | --- | --- | --- |
-| Saved display timezone | Account | Profile save or accepted suggestion |
+| Saved display timezone | Account | First real browser reading, profile save, or accepted suggestion |
 | `device_timezone` | Django session | Real browser detection |
 | `simulated_timezone` | Django session | Demo simulation |
 | `offered_timezone_changes` | Django session | First offer of a directed pair |
@@ -171,6 +174,22 @@ unsaved edits. Other tabs pick up saved preferences on their next request.
 This saved-account policy is a product choice. If your product should follow the device
 continually, make that an explicit mode rather than silently changing the meaning of a saved
 preference.
+
+### New accounts and existing preferences
+
+`timezone_initialized` distinguishes a placeholder UTC default from a deliberate UTC choice.
+Migration 0005 marks all existing preferences initialized, preserving saved settings. New
+preferences start uninitialized. A conditional database update lets only the first browser
+win if two devices report concurrently. Manual profile saves and accepted suggestions also
+mark initialization complete. Invalid or unavailable detection leaves UTC as a fallback and
+allows a later valid reading. Reporting timezones remain independent.
+
+This demo has no registration flow: initialization happens on the first authenticated visit
+that sends a real browser reading. In a signup application, capture the browser's IANA zone
+at registration, validate it server-side, and save it with the user. Admin-created accounts
+should initialize from the tester's first browser, never from the administrator's browser.
+Do not reset the initialization flag on sign-in or travel. Existing accounts with no preference
+row require an explicit backfill policy when adapting this reference.
 
 ## 4. Parse local input in the zone the user saw
 
@@ -261,7 +280,8 @@ Implement the storage and interpretation rules before copying the demonstration 
 
 For agents modifying this repository, preserve these invariants:
 
-- Detection alone never saves an account preference.
+- Only the first valid real-browser reading initializes a new account preference. Later
+  detection never overwrites it, including when the saved choice is UTC.
 - Changing display timezone never changes an existing event instant.
 - The anonymous inspector remains read-only.
 - DST validation and the signed form context survive UI changes.

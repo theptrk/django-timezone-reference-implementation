@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from .forms import EventForm, PreferenceForm, entry_context
-from .models import Event
+from .models import Event, TimezonePreference
 from .zones import (
     resolve_zone,
     timezone_choices,
@@ -86,6 +86,7 @@ def preferences(request):
     form = PreferenceForm(request.POST, instance=request.timezone_preference)
     if not form.is_valid():
         return page(request, preference_form=form, status=400)
+    form.instance.timezone_initialized = True
     form.save()
     request.session.pop("pending_timezone_suggestion", None)
     return redirect("index")
@@ -105,6 +106,15 @@ def device_timezone(request):
     source = data.get("source", "browser")
     if not isinstance(source, str) or source not in {"browser", "simulation"}:
         return JsonResponse({"error": "Invalid detection source."}, status=400)
+    initialized = False
+    if source == "browser":
+        initialized = bool(
+            TimezonePreference.objects.filter(
+                pk=request.timezone_preference.pk,
+                timezone_initialized=False,
+            ).update(display_timezone=zone, timezone_initialized=True)
+        )
+        request.timezone_preference.refresh_from_db()
     key = "device_timezone" if source == "browser" else "simulated_timezone"
     previous = request.session.get(key)
     if source == "simulation" and previous is None:
@@ -129,6 +139,7 @@ def device_timezone(request):
             "display_timezone": resolve_zone(request.timezone_preference),
             "detected_timezone": zone,
             "source": source,
+            "initialized": initialized,
             "suggestion": suggestion,
         }
     )
@@ -150,7 +161,8 @@ def timezone_suggestion(request):
         return JsonResponse({"error": "Choose accept or dismiss."}, status=400)
     if data["action"] == "accept":
         request.timezone_preference.display_timezone = pending["to"]
-        request.timezone_preference.save(update_fields=["display_timezone"])
+        request.timezone_preference.timezone_initialized = True
+        request.timezone_preference.save(update_fields=["display_timezone", "timezone_initialized"])
     request.session.pop("pending_timezone_suggestion")
     return JsonResponse({"display_timezone": resolve_zone(request.timezone_preference)})
 

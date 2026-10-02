@@ -22,6 +22,7 @@ def user(db):
 
 @pytest.fixture
 def logged_in(client, user):
+    TimezonePreference.objects.create(user=user, timezone_initialized=True)
     client.force_login(user)
     return client
 
@@ -112,11 +113,10 @@ def test_offset_is_not_accepted_as_local_wall_time():
 
 
 def test_detection_preserves_profile_and_fixed_override(logged_in, user):
-    pref = TimezonePreference.objects.create(
-        user=user,
-        display_timezone="Europe/London",
-        reporting_timezone="America/New_York",
-    )
+    pref = TimezonePreference.objects.get(user=user)
+    pref.display_timezone = "Europe/London"
+    pref.reporting_timezone = "America/New_York"
+    pref.save()
     response = logged_in.post(
         "/device-timezone/", {"timezone": "Asia/Tokyo"}, content_type="application/json"
     )
@@ -276,8 +276,9 @@ def test_public_inspector_is_read_only(client):
     assert b'src="/static/timezone.js"' not in response.content
 
 
-def test_inspector_does_not_create_logged_in_preferences(logged_in):
-    assert logged_in.get("/").status_code == 200
+def test_inspector_does_not_create_logged_in_preferences(client, user):
+    client.force_login(user)
+    assert client.get("/").status_code == 200
     assert TimezonePreference.objects.count() == 0
 
 
@@ -409,3 +410,47 @@ def test_once_guard_survives_repeated_transition(logged_in):
     session.save()
     assert detection(logged_in, "Asia/Tokyo")["suggestion"] is None
     assert logged_in.session["offered_timezone_changes"] == [["UTC", "Asia/Tokyo"]]
+
+
+def test_first_browser_initializes_new_preference(client, user):
+    client.force_login(user)
+    first = detection(client, "America/Los_Angeles")
+    assert first["initialized"] is True
+    assert first["display_timezone"] == "America/Los_Angeles"
+    assert first["suggestion"] is None
+    assert detection(client, "Asia/Tokyo")["initialized"] is False
+    assert TimezonePreference.objects.get(user=user).display_timezone == "America/Los_Angeles"
+    other = Client()
+    other.force_login(user)
+    assert detection(other, "Europe/London")["display_timezone"] == "America/Los_Angeles"
+
+
+def test_explicit_utc_is_not_a_placeholder(client, user):
+    client.force_login(user)
+    client.post("/preferences/", {"display_timezone": "UTC"})
+    assert detection(client, "Asia/Tokyo")["display_timezone"] == "UTC"
+    assert TimezonePreference.objects.get(user=user).timezone_initialized
+
+
+def test_simulation_cannot_initialize_account(client, user):
+    client.force_login(user)
+    result = client.post(
+        "/device-timezone/",
+        {"timezone": "Asia/Tokyo", "source": "simulation"},
+        content_type="application/json",
+    ).json()
+    assert not result["initialized"]
+    assert not TimezonePreference.objects.get(user=user).timezone_initialized
+    assert detection(client, "America/Los_Angeles")["initialized"]
+
+
+def test_invalid_first_reading_can_be_retried(client, user):
+    client.force_login(user)
+    assert (
+        client.post(
+            "/device-timezone/", {"timezone": "Bad/Zone"}, content_type="application/json"
+        ).status_code
+        == 400
+    )
+    assert not TimezonePreference.objects.get(user=user).timezone_initialized
+    assert detection(client, "UTC")["initialized"]
