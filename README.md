@@ -14,6 +14,12 @@ No frontend build step is required.
 Live demo: https://timezone.delmarscience.com/
 Deployment details: [Dokku runbook](docs/dokku-deploy.md).
 
+## Give this model to a coding agent
+
+Start with [AGENTS.md](AGENTS.md) and the [copyable integration prompt](docs/agent-integration.md).
+Record the reference commit when adopting it. The picker adapter, themeable stylesheet, and
+browser checks are part of the model alongside the Django timezone behavior.
+
 ## Run the reference
 
 Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
@@ -258,6 +264,12 @@ Do not merge zones merely because their offsets happen to match today.
 [Tom Select](https://tom-select.js.org/) **2.6.2** enhances native grouped selects. Users can browse
 or type; arbitrary free text cannot become a saved timezone. Django remains the validation
 boundary. The account dropdown works without JavaScript, and search makes no network requests.
+
+The scoped [picker stylesheet](static/timezone-picker.css) loads after the vendor and host CSS.
+It defaults to light colors and supports `.theme-dark` and `[data-theme="dark"]` ancestors;
+hosts can map their own theme to its custom properties. This styles both enhanced controls and
+native fallbacks, including focused search. The demo page itself has no global dark-theme UI.
+See the [integration guide](docs/agent-integration.md) for files to adapt together.
 
 Assets are vendored in [static/vendor/tom-select-2.6.2](static/vendor/tom-select-2.6.2/), with the
 upstream Apache-2.0 license and package integrity in `SOURCE.md`. There is no CDN or Node build.

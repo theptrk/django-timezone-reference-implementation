@@ -151,3 +151,53 @@ def test_picker_search_keyboard_and_invalid_text(browser_page):
     playwright.expect(page.locator("#detection-status")).to_contain_text("Detected Asia/Tokyo")
     choose_timezone(page, "Simulated browser timezone", "")
     playwright.expect(page.locator("#detected-zone")).to_have_text("Asia/Tokyo (browser)")
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("theme", ["light", "dark", "dark-attribute"])
+def test_picker_theme_contrast_survives_focus_and_search(browser_page, theme):
+    page = browser_page
+    page.evaluate(
+        """theme => {
+          document.body.classList.toggle('theme-dark', theme === 'dark');
+          document.body.dataset.theme = theme === 'dark-attribute' ? 'dark' : 'light';
+        }""",
+        theme,
+    )
+    background = "rgb(255, 255, 255)" if theme == "light" else "rgb(36, 36, 36)"
+    foreground = "rgb(23, 43, 67)" if theme == "light" else "rgb(238, 238, 238)"
+    # Inspect actual computed colors: a vendor gradient can mask background-color.
+    for wrapper in page.locator(".timezone-picker .ts-wrapper").all():
+        control = wrapper.locator(".ts-control")
+        playwright.expect(control).to_have_css("background-color", background)
+        playwright.expect(control).to_have_css("background-image", "none")
+        playwright.expect(control).to_have_css("color", foreground)
+        search = control.locator("input")
+        search.fill("Japan")
+        playwright.expect(control).to_have_css("background-color", background)
+        playwright.expect(control).to_have_css("background-image", "none")
+        playwright.expect(search).to_have_css("color", foreground)
+        dropdown = wrapper.locator(".ts-dropdown")
+        playwright.expect(dropdown).to_have_css("background-color", background)
+        playwright.expect(dropdown).to_have_css("color", foreground)
+        playwright.expect(dropdown.locator('[data-value="Asia/Tokyo"]')).to_be_visible()
+        search.press("Escape")
+    # Theme changes apply to existing controls without initializing them again.
+    page.evaluate("document.body.className = ''; document.body.dataset.theme = 'light'")
+    for control in page.locator(".timezone-picker .ts-control").all():
+        playwright.expect(control).to_have_css("background-color", "rgb(255, 255, 255)")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_native_picker_remains_readable_and_saves_without_enhancement(browser_page):
+    page = browser_page
+    page.route("**/timezone-picker.js", lambda route: route.abort())
+    page.reload()
+    page.evaluate("document.body.classList.add('theme-dark')")
+    native = page.get_by_label("Account timezone:", exact=True)
+    playwright.expect(native).to_be_visible()
+    playwright.expect(native).to_have_css("background-color", "rgb(36, 36, 36)")
+    playwright.expect(native).to_have_css("color", "rgb(238, 238, 238)")
+    native.select_option("Asia/Tokyo")
+    page.get_by_role("button", name="Save timezone", exact=True).click()
+    playwright.expect(page.locator(".zone strong")).to_have_text("Asia/Tokyo")

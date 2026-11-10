@@ -1,0 +1,144 @@
+/* Load after Tom Select and host form styles. Tokens belong to each picker scope. */
+.timezone-picker {
+  --timezone-picker-bg: #fff;
+  --timezone-picker-text: #172b43;
+  --timezone-picker-border: #8b9bb0;
+  --timezone-picker-muted: #526278;
+  --timezone-picker-group-bg: #f0f3f7;
+  --timezone-picker-active-bg: #e3effd;
+}
+/* Host applications control their theme; no preference or storage is changed here. */
+.theme-dark .timezone-picker, [data-theme="dark"] .timezone-picker {
+  --timezone-picker-bg: #242424;
+  --timezone-picker-text: #eee;
+  --timezone-picker-border: #8b9bb0;
+  --timezone-picker-muted: #c0cbd8;
+  --timezone-picker-group-bg: #303944;
+  --timezone-picker-active-bg: #3b4c60;
+}
+.timezone-picker > select:not(.tomselected),
+.timezone-picker p > select:not(.tomselected) {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  height: 36px;
+  padding: 6px 28px 6px 8px;
+  background-color: var(--timezone-picker-bg);
+  color: var(--timezone-picker-text);
+  border: 1px solid var(--timezone-picker-border);
+  border-radius: 6px;
+}
+/* Specificity must beat .ts-wrapper.single.input-active .ts-control.
+   The background shorthand also removes the vendor's single-select gradient. */
+.timezone-picker .ts-wrapper.single .ts-control,
+.timezone-picker .ts-dropdown {
+  background: var(--timezone-picker-bg);
+  color: var(--timezone-picker-text);
+}
+.timezone-picker .ts-control > input {
+  color: var(--timezone-picker-text);
+}
+.timezone-picker .ts-control > input::placeholder {
+  color: var(--timezone-picker-muted);
+  opacity: 1;
+}
+.timezone-picker .ts-wrapper.single .ts-control::after {
+  border-color: var(--timezone-picker-muted) transparent transparent;
+}
+.timezone-picker .ts-wrapper.single.dropdown-active .ts-control::after {
+  border-color: transparent transparent var(--timezone-picker-muted);
+}
+.timezone-picker .ts-wrapper {
+  font-size: 12px;
+}
+
+.timezone-picker .ts-control {
+  border: 1px solid var(--timezone-picker-border);
+  border-radius: 6px;
+  box-shadow: none;
+  background: var(--timezone-picker-bg);
+  padding: 8px;
+  min-height: 36px;
+}
+
+.timezone-picker .ts-control>input {
+  font-size: 12px;
+  padding: 0 !important;
+  min-width: 120px;
+  box-shadow: none;
+  border: 0;
+}
+
+.timezone-picker .ts-control>.item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 15px);
+}
+
+.timezone-picker .ts-wrapper.focus .ts-control {
+  outline: 2px solid #e6a823;
+  outline-offset: 2px;
+}
+
+.timezone-picker .ts-dropdown {
+  font-size: 12px;
+  z-index: 30;
+  border: 1px solid var(--timezone-picker-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px #172b4322;
+  overflow: hidden;
+}
+
+.timezone-picker .ts-dropdown-content {
+  max-height: 320px;
+  overscroll-behavior: contain;
+}
+
+.timezone-picker .ts-dropdown .optgroup-header {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 8px 10px;
+  background: var(--timezone-picker-group-bg);
+  color: var(--timezone-picker-muted);
+}
+
+.timezone-picker .ts-dropdown .option {
+  padding: 7px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timezone-picker .ts-dropdown .option code {
+  color: var(--timezone-picker-muted);
+  font-size: 10px;
+}
+
+.timezone-picker .ts-dropdown .active {
+  background: var(--timezone-picker-active-bg);
+  color: var(--timezone-picker-text);
+}
+
+.timezone-picker .ts-dropdown .selected {
+  box-shadow: inset 3px 0 #185aa6;
+}
+
+.timezone-picker .ts-dropdown .no-results {
+  padding: 12px;
+}
+
+/* Keep the single-select control height stable when its search input gains/loses focus. */
+.timezone-picker .ts-wrapper.single .ts-control {
+  height: 36px;
+  min-height: 36px;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.timezone-picker .ts-control>input {
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 1 1 auto;
+}
+
