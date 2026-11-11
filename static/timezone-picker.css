@@ -1,4 +1,5 @@
-/* Load after Tom Select and host form styles. Tokens belong to each picker scope. */
+/* Tom Select adapter: load after vendor and host styles. No global .ts-* rules.
+   Override these tokens on the component to integrate a host application's theme. */
 .timezone-picker {
   --timezone-picker-bg: #fff;
   --timezone-picker-text: #172b43;
@@ -6,113 +7,144 @@
   --timezone-picker-muted: #526278;
   --timezone-picker-group-bg: #f0f3f7;
   --timezone-picker-active-bg: #e3effd;
+  --timezone-picker-focus: #e6a823;
+  --timezone-picker-selected: #185aa6;
+  --timezone-picker-shadow: 0 0.5rem 1.5rem #172b4322;
+  --timezone-picker-font-size: 0.8125rem;
+  --timezone-picker-search-font-size: 0.75rem;
+  --timezone-picker-dropdown-font-size: 0.75rem;
+  --timezone-picker-detail-font-size: 0.625rem;
+  --timezone-picker-line-height: 1.125rem;
+  --timezone-picker-control-size: 2.25rem;
+  --timezone-picker-radius: 0.375rem;
+  --timezone-picker-max-width: 100%;
+  --timezone-picker-color-scheme: light;
+  min-width: 0;
+  max-width: var(--timezone-picker-max-width);
 }
-/* Host applications control their theme; no preference or storage is changed here. */
+
+/* Theme hooks style only this component; the host owns preference and persistence. */
 .theme-dark .timezone-picker, [data-theme="dark"] .timezone-picker {
   --timezone-picker-bg: #242424;
   --timezone-picker-text: #eee;
-  --timezone-picker-border: #8b9bb0;
   --timezone-picker-muted: #c0cbd8;
   --timezone-picker-group-bg: #303944;
   --timezone-picker-active-bg: #3b4c60;
+  --timezone-picker-color-scheme: dark;
 }
-.timezone-picker > select:not(.tomselected),
-.timezone-picker p > select:not(.tomselected) {
+
+/* Explicit hook works with any form renderer or surrounding markup. */
+.timezone-picker select.timezone-picker__native:not(.tomselected) {
   width: 100%;
+  min-width: 0;
   box-sizing: border-box;
-  font: inherit;
-  height: 36px;
-  padding: 6px 28px 6px 8px;
+  font-family: inherit;
+  font-size: var(--timezone-picker-font-size);
+  line-height: var(--timezone-picker-line-height);
+  min-height: var(--timezone-picker-control-size);
+  padding: 0.5rem;
+  color-scheme: var(--timezone-picker-color-scheme);
   background-color: var(--timezone-picker-bg);
   color: var(--timezone-picker-text);
   border: 1px solid var(--timezone-picker-border);
-  border-radius: 6px;
+  border-radius: var(--timezone-picker-radius);
 }
-/* Specificity must beat .ts-wrapper.single.input-active .ts-control.
-   The background shorthand also removes the vendor's single-select gradient. */
-.timezone-picker .ts-wrapper.single .ts-control,
-.timezone-picker .ts-dropdown {
+
+.timezone-picker .ts-wrapper {
+  width: 100%;
+  min-width: 0;
+  font-size: var(--timezone-picker-font-size);
+}
+
+/* Matches the specificity of the vendor's .single.input-active rule.
+   Use background, not background-color: the vendor also sets a white gradient. */
+.timezone-picker .ts-wrapper.single .ts-control {
+  box-sizing: border-box;
+  min-height: var(--timezone-picker-control-size);
+  padding: 0.5rem;
+  border: 1px solid var(--timezone-picker-border);
+  border-radius: var(--timezone-picker-radius);
+  box-shadow: none;
   background: var(--timezone-picker-bg);
   color: var(--timezone-picker-text);
+  font-size: var(--timezone-picker-font-size);
+  line-height: var(--timezone-picker-line-height);
+  flex-wrap: nowrap;
+  align-items: center;
 }
+
 .timezone-picker .ts-control > input {
+  /* Tom Select writes an inline search width; flex must own the remaining space. */
+  width: auto !important;
+  min-width: 0;
+  flex: 1 1 auto;
   color: var(--timezone-picker-text);
+  font-size: var(--timezone-picker-search-font-size);
 }
+
 .timezone-picker .ts-control > input::placeholder {
   color: var(--timezone-picker-muted);
   opacity: 1;
 }
-.timezone-picker .ts-wrapper.single .ts-control::after {
-  border-color: var(--timezone-picker-muted) transparent transparent;
-}
-.timezone-picker .ts-wrapper.single.dropdown-active .ts-control::after {
-  border-color: transparent transparent var(--timezone-picker-muted);
-}
-.timezone-picker .ts-wrapper {
-  font-size: 12px;
-}
 
-.timezone-picker .ts-control {
-  border: 1px solid var(--timezone-picker-border);
-  border-radius: 6px;
-  box-shadow: none;
-  background: var(--timezone-picker-bg);
-  padding: 8px;
-  min-height: 36px;
-}
-
-.timezone-picker .ts-control>input {
-  font-size: 12px;
-  padding: 0 !important;
-  min-width: 120px;
-  box-shadow: none;
-  border: 0;
-}
-
-.timezone-picker .ts-control>.item {
+.timezone-picker .ts-control > .item {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: calc(100% - 15px);
+  max-width: calc(100% - 0.9375rem);
 }
 
-.timezone-picker .ts-wrapper.focus .ts-control {
-  outline: 2px solid #e6a823;
+.timezone-picker .ts-wrapper.single .ts-control::after {
+  border-color: var(--timezone-picker-muted) transparent transparent;
+}
+
+.timezone-picker .ts-wrapper.single.dropdown-active .ts-control::after {
+  border-color: transparent transparent var(--timezone-picker-muted);
+}
+
+.timezone-picker .ts-wrapper.focus .ts-control,
+.timezone-picker select.timezone-picker__native:focus-visible {
+  outline: 2px solid var(--timezone-picker-focus);
   outline-offset: 2px;
 }
 
 .timezone-picker .ts-dropdown {
-  font-size: 12px;
+  font-size: var(--timezone-picker-dropdown-font-size);
+  line-height: var(--timezone-picker-line-height);
   z-index: 30;
   border: 1px solid var(--timezone-picker-border);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px #172b4322;
+  border-radius: var(--timezone-picker-radius);
+  background: var(--timezone-picker-bg);
+  color: var(--timezone-picker-text);
+  box-shadow: var(--timezone-picker-shadow);
   overflow: hidden;
 }
 
 .timezone-picker .ts-dropdown-content {
-  max-height: 320px;
+  max-height: min(20rem, 50vh);
   overscroll-behavior: contain;
 }
 
 .timezone-picker .ts-dropdown .optgroup-header {
-  font-size: 10px;
+  font-size: var(--timezone-picker-detail-font-size);
   font-weight: 700;
-  padding: 8px 10px;
+  padding: 0.5rem 0.625rem;
   background: var(--timezone-picker-group-bg);
   color: var(--timezone-picker-muted);
 }
 
 .timezone-picker .ts-dropdown .option {
-  padding: 7px 10px;
+  padding: 0.4375rem 0.625rem;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.125rem;
+  overflow-wrap: anywhere;
 }
 
 .timezone-picker .ts-dropdown .option code {
   color: var(--timezone-picker-muted);
-  font-size: 10px;
+  font-size: var(--timezone-picker-detail-font-size);
 }
 
 .timezone-picker .ts-dropdown .active {
@@ -121,24 +153,9 @@
 }
 
 .timezone-picker .ts-dropdown .selected {
-  box-shadow: inset 3px 0 #185aa6;
+  box-shadow: inset 3px 0 var(--timezone-picker-selected);
 }
 
 .timezone-picker .ts-dropdown .no-results {
-  padding: 12px;
+  padding: 0.75rem;
 }
-
-/* Keep the single-select control height stable when its search input gains/loses focus. */
-.timezone-picker .ts-wrapper.single .ts-control {
-  height: 36px;
-  min-height: 36px;
-  flex-wrap: nowrap;
-  align-items: center;
-}
-
-.timezone-picker .ts-control>input {
-  width: auto !important;
-  min-width: 0 !important;
-  flex: 1 1 auto;
-}
-

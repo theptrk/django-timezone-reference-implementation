@@ -19,13 +19,19 @@ and tests before adapting it. Preserve the target app's architecture and release
 
 - Copy static/timezone-picker.js, static/timezone-picker.css, and the pinned vendor directory
   with its license and SOURCE.md. The adapter is an ES module; preserve its relative import.
-- Render server-validated grouped native selects inside `.timezone-picker` containers. Load the
+- Render server-validated grouped native selects inside `.timezone-picker` containers, and give each select the
+  `timezone-picker__native` class. Load the
   vendor CSS first, host CSS next, and timezone-picker.css last. See templates/timezones/index.html
   and static/timezone.js for wiring and the country metadata JSON.
 - Keep `create: false`, native form submission, server validation, labels, keyboard navigation,
   country search, and the native fallback. Search typing must not mark a preference as changed.
 - Map the host theme to the component tokens. `.theme-dark` and `[data-theme="dark"]` ancestors
   are demonstrated. The reference does not implement a global dark theme or persist theme state.
+- Keep native fallback selectors restricted to `select.timezone-picker__native`: Tom Select
+  copies select classes onto its wrapper. Test that the wrapper has no native padding or border.
+- Keep component sizing in rem/min-height so enlarged text can grow; grid/flex hosts must allow
+  shrinking (`min-width: 0`). Verify at 200% root text size on a narrow viewport.
+- Keep every `.ts-*` selector under `.timezone-picker`; verify unrelated controls stay unchanged.
 - Tom Select's single-select CSS includes a white gradient and a more specific focused state.
   Override the full `background`, with enough specificity for both closed and input-active states.
   A background-color override alone does not remove the gradient. Do not edit vendor assets.

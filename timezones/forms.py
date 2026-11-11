@@ -24,7 +24,9 @@ class PreferenceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["display_timezone"] = forms.ChoiceField(
-            label="Account timezone", choices=timezone_choices()
+            label="Account timezone",
+            choices=timezone_choices(),
+            widget=forms.Select(attrs={"class": "timezone-picker__native"}),
         )
 
 

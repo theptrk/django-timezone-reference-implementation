@@ -189,11 +189,13 @@ def test_picker_theme_contrast_survives_focus_and_search(browser_page, theme):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_native_picker_remains_readable_and_saves_without_enhancement(browser_page):
+@pytest.mark.parametrize("text_scale", [100, 200])
+def test_native_picker_remains_readable_and_saves_without_enhancement(browser_page, text_scale):
     page = browser_page
     page.route("**/timezone-picker.js", lambda route: route.abort())
     page.reload()
     page.evaluate("document.body.classList.add('theme-dark')")
+    page.evaluate("scale => document.documentElement.style.fontSize = scale + '%'", text_scale)
     native = page.get_by_label("Account timezone:", exact=True)
     playwright.expect(native).to_be_visible()
     playwright.expect(native).to_have_css("background-color", "rgb(36, 36, 36)")
@@ -201,3 +203,55 @@ def test_native_picker_remains_readable_and_saves_without_enhancement(browser_pa
     native.select_option("Asia/Tokyo")
     page.get_by_role("button", name="Save timezone", exact=True).click()
     playwright.expect(page.locator(".zone strong")).to_have_text("Asia/Tokyo")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_picker_scope_and_enlarged_text(browser_page):
+    page = browser_page
+    page.evaluate("""() => {
+      const container = document.createElement('div');
+      container.innerHTML = '<label for="unrelated-select">Unrelated select</label>' +
+        '<select id="unrelated-select"><option>Unrelated option</option></select>';
+      document.body.append(container);
+      new window.TomSelect(container.querySelector('select'));
+    }""")
+    unrelated = page.locator("#unrelated-select-ts-control").locator("..")
+    before = unrelated.evaluate(
+        "el => {const s = getComputedStyle(el); "
+        "return [s.backgroundImage, s.padding, s.fontSize, s.borderRadius];}"
+    )
+    # Our stylesheets must not change any unscoped Tom Select instance.
+    page.evaluate("""() => {
+      for (const sheet of document.styleSheets) {
+        if (sheet.href && /timezone-picker(?:-site)?[.]css/.test(sheet.href)) sheet.disabled = true;
+      }
+    }""")
+    assert (
+        unrelated.evaluate(
+            "el => {const s = getComputedStyle(el); "
+            "return [s.backgroundImage, s.padding, s.fontSize, s.borderRadius];}"
+        )
+        == before
+    )
+    page.evaluate("""() => {
+      for (const sheet of document.styleSheets) sheet.disabled = false;
+      document.documentElement.style.fontSize = '200%';
+    }""")
+    page.set_viewport_size({"width": 390, "height": 844})
+    picker = page.get_by_role("combobox", name="Account timezone")
+    picker.fill("Japan")
+    playwright.expect(
+        page.locator('.ts-dropdown:visible [data-value="Asia/Tokyo"]')
+    ).to_be_visible()
+    for wrapper in page.locator(".timezone-picker .ts-wrapper").all():
+        playwright.expect(wrapper).to_have_css("padding-top", "0px")
+        playwright.expect(wrapper).to_have_css("border-top-width", "0px")
+        control = wrapper.locator(".ts-control")
+        rect = control.bounding_box()
+        assert rect["x"] >= 0 and rect["x"] + rect["width"] <= 390
+        assert rect["height"] >= 72
+        assert control.locator("input").bounding_box()["height"] <= rect["height"]
+    playwright.expect(page.locator(".ts-dropdown:visible .option")).to_have_count(2)
+    assert page.locator(".ts-dropdown:visible .option").evaluate_all(
+        "options => options.every(el => el.scrollWidth <= el.clientWidth)"
+    )
